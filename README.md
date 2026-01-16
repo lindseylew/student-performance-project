@@ -104,7 +104,7 @@ This work sits at the intersection of:
 Clone the repo: 
 
 ```bash
-git clone <repo link coming soon>
+git clone git@github.com:lindseylew/student-performance-project.git
 cd student-performance-project
 
 pip install -r requirements.txt
