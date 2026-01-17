@@ -15,8 +15,8 @@ env/
 
 # Data
 data/raw/
-*.csv
-*.xlsx
+data/raw/**
+!data/cleaned_student_performance.csv
 
 # System / IDE
 .DS_Store
@@ -24,6 +24,7 @@ data/raw/
 .vscode/
 
 # Models / artifacts
+models/
 models/*.pkl
 models/*.joblib
 models/*.pickle

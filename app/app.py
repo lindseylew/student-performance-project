@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from pathlib import Path
 import joblib
+from sklearn.ensemble import RandomForestClassifier
 
 # 1) Page config
 
@@ -17,7 +18,7 @@ st.write(
     "This app uses a **Random Forest** model to predict **FinalGrade (0-3)** from study habits, engagement, and context."
 )
 
-st.info("Note: In this dataset, **FinalGrade is encoded as 0=highest (A) and 3=lowest (D)")
+st.info("Note: In this dataset, **FinalGrade is encoded as 0=highest (A) and 3=lowest (D)**")
 
 grade_label= {
     0: "A (highest)",
@@ -44,16 +45,67 @@ def load_data() -> pd.DataFrame:
     return pd.read_csv(DATA_PATH)
 
 @st.cache_resource
-def load_model():
-    return joblib.load(MODEL_PATH)
+def load_model_or_none(model_path: Path):
+    """Load a trained model if present. Return None if missing."""
+    if model_path.exists():
+        return joblib.load(model_path)
+    return None
 
 data = load_data()
-model = load_model()
+model = load_model_or_none(MODEL_PATH)
 
 st.sidebar.header("About the data")
 st.sidebar.write(f"Rows: **{len(data):,}**")
 st.sidebar.write("Target: **FinalGrade (0-3)**")
 st.sidebar.caption("Encoding: 0=A (highest), 1=B, 2=C, 3=D (lowest)")
+
+if model is None:
+    st.warning(
+        "Trained model file not found (`models/random_forest.pkl`).\n\n"
+        "This repo does not include model artifacts (GitHub file size limit)."
+        "To generate it locally, run `notebooks/04_modeling.ipynb` and save the model to: \n\n"
+        "`models/random_forest.pkl`"
+    )
+
+    with st.expander("Optional: Train a model now (demo mode)"):
+        st.write("This trains a Random Forest quickly using the dataset in `data/`.")
+
+        if st.button("Train model"):
+            data_fe = add_engineered_features(data)
+
+            y = data_fe["FinalGrade"]
+            feature_cols = [
+                "StudyHours",
+                "Attendance",
+                "AssignmentCompletion",
+                "OnlineCourses",
+                "Motivation",
+                "Resources",
+                "Internet",
+                "Discussions",
+                "StressLevel",
+                "Extracurricular",
+                "StudyEfficiency",
+                "AttendanceRatio",
+                "TechAccess",
+                "EngagementScore",
+                "StressBalance",
+            ]
+            X = data_fe[feature_cols]
+
+            rf = RandomForestClassifier(
+                n_estimators=300,
+                random_state=42,
+                class_weight="balanced"
+            )
+            rf.fit(X,y)
+
+            MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
+            joblib.dump(rf, MODEL_PATH)
+
+            st.success("Model trained and saved to `models/random_forest.pkl`. Reloading app...")
+            st.rerun()
+    st.stop()
 
 #4) Feature columns
 
@@ -135,10 +187,10 @@ if proba is not None:
         "Label": [grade_label[i] for i in [0, 1, 2, 3]],
         "Probability": proba
     })
-    st.dataframe(proba_df, use_container_width=True)
+    st.dataframe(proba_df, width="stretch")
 
-st.markdown("###What might help improve this outcome?")
-st.write("Based on the model's learned patterns, improvments in **study efficiency**"
+st.markdown("### What might help improve this outcome?")
+st.write("Based on the model's learned patterns, improvements in **study efficiency**"
          "and **engagement** tend to have the largest impact on predicted outcomes."
         )
 
@@ -150,14 +202,14 @@ with st.expander("See engineered features used by the model"):
     st.write("These features are computed from the inputs (same logic as the modeling notebook).")
     engineered_cols = ["StudyEfficiency", "AttendanceRatio", "TechAccess", "EngagementScore", "StressBalance"]
     show_df = input_fe.copy()
-    st.dataframe(show_df[engineered_cols], use_container_width=True)
+    st.dataframe(show_df[engineered_cols], width="stretch")
 
 # 8) Interpretation Text
 
 st.subheader("How to read this result")
 st.write(
     "- This is a **demo** trained on a public dataset.\n"
-    "- The model learns patterns fro **behavior and context**, but real student outcomes are also shaped by factors not in the data.\n"
+    "- The model learns patterns from **behavior and context**, but real student outcomes are also shaped by factors not in the data.\n"
     "- Predictions are **probabilistic**, not guarantees."
 )
 
