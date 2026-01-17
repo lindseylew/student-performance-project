@@ -9,16 +9,67 @@ Using a dataset of **14,003 anonymized student records**, the goal is to underst
 
 ---
 
-## Highlights
+## Project Highlights
 - Data cleaned and processed using reproducable steps
 - **8 student behavior clusters** discovered using K-Means
 - Model improved from **29% to 90% accuracy** through feature engineering
-- Top drivers of performance identified (study efficiency, attendance, engagement)
-- Next phase: **Interactive Streamlit prediction app**
+- Key drivers of performance identified
+    - Study efficiency
+    - Attendance consistency
+    - Engagement behaviors
+- **Interactive Streamlit app** built to demonstrate real-time predictions
 
 ---
-Tech Stack
-- Python 3.12
+
+## Project Workflow
+
+### 1️⃣ Data Cleaning & Exploration
+    - Identified key behavioral and contextual variables
+    - Analyzed relationships between behavior and FinalGrade
+    - Compared numeric patterns and categorical patterns
+
+### 2️⃣ Behavioal Clustering
+    - Applied **K-Means clustering**
+    - Identified distinct student learning profiles
+    - Compared motivation, resources, and engagement across clusters
+
+### 3️⃣ Predictive Modeling
+    - Baseline **Logistic Regression** (~20% accuracy)
+    - **Random Forest Classifier** (~90% accuracy)
+    - Evaluated using:
+        - Classification report
+        - Confusion matrix
+        - Class-level performance metrics
+
+### 4️⃣ Feature Engineering
+Created new variables that significantly improved performance:
+
+- `StudyEfficiency`
+- `AttendanceRatio`
+- `TechAccess`
+- `EngagementScore`
+- `StressBalance`
+
+Feature engineering logic is shared across noteboods and the Streamlit app for consistency
+
+---
+
+## Interactive Streamlit App
+
+The project includes a Streamlit application that allows users to:
+
+- Adjusts student behavior inputs
+- Generate real-time grade predictions
+- View class probabilities and confidence
+- Inspect engineered features used by the model
+
+> ⚠️ This app is for **educational demonstration only** and odes not make real academic decisions.
+
+---
+
+## Tech Stack
+
+- **Python 3.12**
 - pandas, numpy
 - seaborn, matplotlib
 - scikit-learn
@@ -27,75 +78,39 @@ Tech Stack
     - Random Forest
     - PCA
 - Jupyter Notebook
-- (Coming Soon) Streamlit for deployment
+- **Streamlit**
 
 ---
 
 ## Folder Structure
 
-```student-performance-project/
+```text
+student-performance-project/
+│
+├── app/
+│   └── app.py                  # Streamlit application
 │
 ├── data/
-│ ├── cleaned_student_performance.csv
-│ └── student_performance.csv
+│   ├── cleaned_student_performance.csv
+│   └── student_performance.csv
+│
+├── models/
+│   └── random_forest_model.pkl # Trained model
 │
 ├── notebooks/
-│ ├── 01_data_cleaning.ipynb
-│ ├── 02_EDA.ipynb
-│ ├── 03_clustering.ipynb
-│ └── 04_modeling.ipynb
+│   ├── 01_data_cleaning.ipynb
+│   ├── 02_EDA.ipynb
+│   ├── 03_clustering.ipynb
+│   └── 04_modeling.ipynb
 │
-├── images/ # (plots/screenshots saved here)
+├── src/
+│   └── features.py             # Shared feature engineering logic
+│
+├── images/                     # Saved plots / screenshots
 │
 ├── requirements.txt
-└── README.md```
-
----
-
-### 1. Clean and Explore the Data
-- Identify key variables
-- Analyze relationships between behavior and FinalGrade
-- Compare numeric + categorical patterns
-
-### 2. Cluster student behavior
-- Apply K-Means to find behavioral groups
-- Examine differences in motivation, resources, and engagement
-
-### 3. Train predictive models
-- Baseline Logistic Regression (~29% accuracy)
-- Random Forest Classifier (~90% accuracy)
-- Evaluate performance using classification metrics & confusion matrix
-
-### 4. Feature Engineering
-Created new variables that turned out to be highly predictive:
-- `StudyEfficiency`
-- `AttendanceRatio`
-- `TechAccess`
-- `EngagementScore`
-- `StressBalance`
-
-### Next Steps
-- Deploy model in a **Streamlit app**
-- Add "what-if" behavior simulator
--Share insights visually on Instagram as part of an open learning journey
-
-## Dataset Source
-Student Performance & Learning Behavior Dataset
-Public + CC BY 4.0
-Kaggle - (link coming soon)
-
----
-
-## Project Goals
-Use data analytics + maching learning to answer:
-> **What study behaviors and conditions most influence student success?**
-
----
-
-This work sits at the intersection of:
-- Data Science
-- Learning Psychology
-- Education equity
+└── README.md
+```
 
 ---
 
@@ -106,8 +121,14 @@ Clone the repo:
 ```bash
 git clone git@github.com:lindseylew/student-performance-project.git
 cd student-performance-project
+```
 
+Install dependencies:
+
+```bash
 pip install -r requirements.txt
+```
 
+Run the Streamlit app:
 
 This is an ongoing progect - contributions, ideas, and feedback are welcome!
