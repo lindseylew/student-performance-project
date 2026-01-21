@@ -56,7 +56,7 @@ def load_model_or_none(path: Path):
 
 # Show a clear error if data is missing
 if not DATA_PATH.exists():
-    st.error(f"Data file not found: `{DATA_PATH}`\n\Make sure `data/cleaned_student_performance.csv` exists.")
+    st.error(f"Data file not found: `{DATA_PATH}`\n\nMake sure `data/cleaned_student_performance.csv` exists.")
     st.stop()
 
 data = load_data(DATA_PATH)
@@ -168,7 +168,7 @@ with st.sidebar:
 
 
     with st.form("predict_form"):
-        st.subheader("Study & Engagment")
+        st.subheader("Study & Engagement")
         study_hours = st.slider("StudyHours", 0, 20, defaults["StudyHours"], help="Weekly study time (0-20).")
         attendance = st.slider("Attendance (%)", 0, 100, defaults["Attendance"])
         assignment_completion = st.slider("AssignmentCompletion (%)", 0, 100, defaults["AssignmentCompletion"])
