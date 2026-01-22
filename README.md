@@ -1,5 +1,14 @@
 # Student Performance Analysis Project
 
+---
+
+## 🚀 Live Demo
+
+🔗 **Streamlit App:** [](https://student-performance-project-a5egfhkburekappx72h2rkn.streamlit.app/)
+This interactive demo allows users to explore how study habits and engagement relate to predicted academic outcomes using a Random Forest model.
+
+---
+
 This project explores how student habits, engagement, and access factors relate to academic outcomes.
 Using a dataset of **14,003 anonymized student records**, the goal is to understand:
 
