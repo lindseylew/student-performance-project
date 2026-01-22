@@ -1,9 +1,9 @@
 import sys
 from pathlib import Path
 
-import joblib
 import streamlit as st
 import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
 
 
 
@@ -30,107 +30,43 @@ grade_label= {
     3: "D (lowest)"
 }
 
+
 # 2) Paths + imports from src
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = PROJECT_ROOT / "data" / "cleaned_student_performance.csv"
-MODEL_PATH = PROJECT_ROOT / "models" / "random_forest.pkl"
 
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.append(str(PROJECT_ROOT))
 
 from src.features import add_engineered_features
 
-# 3) Load data + model
+
+# 3) Load data
 
 @st.cache_data
 def load_data(path: Path) -> pd.DataFrame:
     return pd.read_csv(path)
 
-@st.cache_resource
-def load_model_or_none(path: Path):
-    """Load a trained model if present. Return None if missing."""
-    if path.exists():
-        return joblib.load(path)
-    return None
-
-# Show a clear error if data is missing
 if not DATA_PATH.exists():
-    st.error(f"Data file not found: `{DATA_PATH}`\n\nMake sure `data/cleaned_student_performance.csv` exists.")
+    st.error(
+        f"Data file not found: `{DATA_PATH}`\n\n"
+        "Make sure `data/cleaned_student_performance.csv` exists."
+    )
     st.stop()
 
 data = load_data(DATA_PATH)
-model = load_model_or_none(MODEL_PATH)
 
 with st.sidebar:
-    st.sidebar.header("About the data")
-    st.sidebar.write(f"Rows: **{len(data):,}**")
-    st.sidebar.write("Target: **FinalGrade (0-3)**")
-    st.sidebar.caption("Encoding: 0=A (highest), 1=B, 2=C, 3=D (lowest)")
+    st.header("About the data")
+    st.write(f"Rows: **{len(data):,}**")
+    st.write("Target: **FinalGrade (0-3)**")
+    st.caption("Encoding: 0=A (highest), 1=B, 2=C, 3=D (lowest)")
     st.divider()
 
-# 4) Missing model UX
+# 4) Model training
 
-if model is None:
-    st.warning(
-        "Trained model file not found (`models/random_forest.pkl`).\n\n"
-        "This repo does not include model artifacts (GitHub file size limit)."
-    )
-
-    with st.expander("Train a demo model locally (recommended for testing)"):
-        st.write(
-            "Click to train a Random Forest using the cleaned dataset.\n\n"
-            "**Note:** This is for local/demo use only."
-            )
-
-        if st.button("Train demo model"):
-            from sklearn.ensemble import RandomForestClassifier
-            from sklearn.model_selection import train_test_split
-
-            data_fe = add_engineered_features(data)
-
-            feature_cols = [
-                "StudyHours",
-                "Attendance",
-                "AssignmentCompletion",
-                "OnlineCourses",
-                "Motivation",
-                "Resources",
-                "Internet",
-                "Discussions",
-                "StressLevel",
-                "Extracurricular",
-                "StudyEfficiency",
-                "AttendanceRatio",
-                "TechAccess",
-                "EngagementScore",
-                "StressBalance",
-            ]
-
-            X = data_fe[feature_cols]
-            y = data_fe["FinalGrade"]
-
-            X_train, _, y_train, _ = train_test_split(
-                X, y, test_size=0.2, random_state=42, stratify=y
-            )
-
-            rf = RandomForestClassifier(
-                n_estimators=300,
-                random_state=42,
-                class_weight="balanced"
-            )
-            rf.fit(X_train,y_train)
-
-            MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
-            joblib.dump(rf, MODEL_PATH)
-
-            st.success("Model trained and saved to `models/random_forest.pkl`. Reloading app...")
-            st.rerun()
-    st.stop()
-
-#5) Feature columns
-
-feature_cols = [
+FEATURE_COLS = [
     "StudyHours",
     "Attendance",
     "AssignmentCompletion",
@@ -145,10 +81,58 @@ feature_cols = [
     "AttendanceRatio",
     "TechAccess",
     "EngagementScore",
-    "StressBalance"
+    "StressBalance",
 ]
 
-# 6) Sidebar Inputs
+@st.cache_resource
+def train_model(data_path:str) -> RandomForestClassifier:
+    df = pd.read_csv(data_path)
+    df_fe = add_engineered_features(df)
+
+    missing = [c for c in FEATURE_COLS + ["FinalGrade"] if c not in df_fe.columns]
+    if missing:
+        raise ValueError(f"Missing columns after feature engineering: {missing}")
+    
+    X = df_fe[FEATURE_COLS]
+    y = df_fe["FinalGrade"]
+
+    rf = RandomForestClassifier(
+        n_estimators=300,
+        random_state=42,
+        class_weight="balanced",
+        n_jobs=-1,
+    )
+    rf.fit(X, y)
+    return rf
+
+if "model_ready" not in st.session_state:
+    st.session_state.model_ready = False
+
+st.subheader("Model status")
+
+if not st.session_state.model_ready:
+    st.warning("Model not trained yet for this session.")
+    colA, colB = st.columns([1, 2], vertical_alignment="center")
+    with colA:
+        train_clicked = st.button("Train model", type="primary")
+    with colB:
+        st.caption("Deployment-safe: trains in memory")
+
+    if train_clicked:
+        try:
+            with st.spinner("Training model..."):
+                model = train_model(str(DATA_PATH))
+            st.session_state.model_ready = True
+            st.success("Model trained! You can now make predictions.")
+            st.rerun()
+        except Exception as e:
+            st.exception(e)
+
+    st.stop()
+
+model = train_model(str(DATA_PATH))
+
+# 5) Sidebar inputs (Predict Form)
 
 defaults = {
     "StudyHours": 5,
@@ -165,7 +149,6 @@ defaults = {
 
 with st.sidebar:
     st.header("Input student features")
-
 
     with st.form("predict_form"):
         st.subheader("Study & Engagement")
@@ -194,8 +177,7 @@ with st.sidebar:
 
         predict_clicked = st.form_submit_button("Predict")
 
-# 7) Build input row + predict only on submit
-
+# 6) Build input row + predict only on submit
 input_df = pd.DataFrame([{
     "StudyHours": study_hours,
     "Attendance": attendance,
@@ -213,7 +195,7 @@ input_df = pd.DataFrame([{
 input_fe = add_engineered_features(input_df)
 
 # Ensure that we only pass the columns the model expects, in the correct order
-X_input = input_fe[feature_cols]
+X_input = input_fe[FEATURE_COLS]
 
 if "last_pred" not in st.session_state:
     st.session_state.last_pred = None
@@ -231,7 +213,7 @@ if predict_clicked:
     st.session_state.last_proba = proba
     st.session_state.last_engineered = input_fe.copy()
 
-# 8) Results UI
+# 7) Results UI
 
 st.subheader("Prediction")
 
