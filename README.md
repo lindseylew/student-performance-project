@@ -4,7 +4,7 @@
 
 ## 🚀 Live Demo
 
-🔗 **Streamlit App:** [](https://student-performance-project-a5egfhkburekappx72h2rkn.streamlit.app/)
+🔗 **Streamlit App:** [Launch the Live App](https://student-performance-project-a5egfhkburekappx72h2rkn.streamlit.app/)
 This interactive demo allows users to explore how study habits and engagement relate to predicted academic outcomes using a Random Forest model.
 
 ---
